@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Калькулятор прибыли и маржи</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f5;--panel:#fff;--ink:#14213d;--mute:#5d6b82;--line:#d9dfe8;--good:#0b8f7d;--bad:#d64550;
+--c1:#14213d;--c2:#4a5f85;--c3:#8aa0c4;--c4:#e0a43a;--c5:#c97b5a;--c6:#9a8fb5;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1522;--panel:#17202f;--ink:#e8edf6;--mute:#93a0b6;--line:#2a364a;--good:#3ccfb8;--bad:#ff7a84;--c1:#e8edf6;--c2:#9bb0d6;--c3:#5f77a3;--c4:#e0a43a;--c5:#d98c6c;--c6:#9a8fb5}}
+:root[data-theme="dark"]{--bg:#0e1522;--panel:#17202f;--ink:#e8edf6;--mute:#93a0b6;--line:#2a364a;--good:#3ccfb8;--bad:#ff7a84;--c1:#e8edf6;--c2:#9bb0d6;--c3:#5f77a3;--c4:#e0a43a;--c5:#d98c6c;--c6:#9a8fb5}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Onest,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:clamp(24px,4vw,34px);margin:8px 0 4px;font-weight:800;letter-spacing:-.02em}
+.sub{color:var(--mute);margin:0 0 20px;max-width:60ch}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+h2{font-size:15px;margin:0 0 12px;font-weight:700}
+.f{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}
+.f label{color:var(--mute);font-size:14px}
+.f .in{display:flex;align-items:center;gap:6px}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:104px;text-align:right}
+select{width:auto}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--c2);outline-offset:1px}
+.u{color:var(--mute);width:20px;font-size:14px}
+.hero{padding:20px}
+.big{font-size:clamp(34px,7vw,52px);font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}
+.big.pos{color:var(--good)}.big.neg{color:var(--bad)}
+.cap{color:var(--mute);font-size:14px;margin-bottom:14px}
+.bar{display:flex;height:34px;border-radius:8px;overflow:hidden;background:var(--line);margin:14px 0 10px}
+.bar div{height:100%;transition:width .25s}
+.leg{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;font-size:13px}
+.leg li{display:flex;align-items:center;gap:7px;justify-content:space-between}
+.leg i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:6px}
+.leg span:last-child{font-variant-numeric:tabular-nums;color:var(--mute)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.k{border:1px solid var(--line);border-radius:10px;padding:10px}
+.k b{display:block;font-size:19px;font-variant-numeric:tabular-nums}
+.k span{color:var(--mute);font-size:12.5px}
+.msg{margin-top:14px;padding:10px 12px;border-radius:10px;background:var(--bg);font-size:14px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+button{font:inherit;background:none;color:var(--mute);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+@media(max-width:420px){.kpis{grid-template-columns:1fr 1fr}.leg{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <div class="top"><h1>Сколько вы реально зарабатываете с одного товара</h1><button id="reset" type="button">Сбросить</button></div>
+ <p class="sub">Впишите цену и все расходы. Калькулятор покажет прибыль с штуки, маржу и цену, ниже которой вы работаете в минус.</p>
+ <div class="grid">
+  <div class="panel">
+   <h2>Цена и расходы на 1 штуку</h2>
+   <div class="f"><label for="cur">Валюта</label><div class="in"><select id="cur"><option>₽</option><option>$</option><option>€</option><option>kr</option><option>₸</option><option>₴</option></select></div></div>
+   <div class="f"><label for="price">Цена продажи</label><div class="in"><input id="price" type="number" inputmode="decimal" min="0" step="any"><span class="u cu"></span></div></div>
+   <div class="f"><label for="cost">Себестоимость</label><div class="in"><input id="cost" type="number" inputmode="decimal" min="0" step="any"><span class="u cu"></span></div></div>
+   <div class="f"><label for="pack">Упаковка и прочее</label><div class="in"><input id="pack" type="number" inputmode="decimal" min="0" step="any"><span class="u cu"></span></div></div>
+   <div class="f"><label for="log">Логистика и хранение</label><div class="in"><input id="log" type="number" inputmode="decimal" min="0" step="any"><span class="u cu"></span></div></div>
+   <div class="f"><label for="com">Комиссия площадки</label><div class="in"><input id="com" type="number" inputmode="decimal" min="0" step="any"><span class="u">%</span></div></div>
+   <div class="f"><label for="ads">Реклама, от цены</label><div class="in"><input id="ads" type="number" inputmode="decimal" min="0" step="any"><span class="u">%</span></div></div>
+   <div class="f"><label for="ret">Возвраты и брак, от цены</label><div class="in"><input id="ret" type="number" inputmode="decimal" min="0" step="any"><span class="u">%</span></div></div>
+   <div class="f"><label for="tax">Налог, от выручки</label><div class="in"><input id="tax" type="number" inputmode="decimal" min="0" step="any"><span class="u">%</span></div></div>
+   <h2 style="margin-top:18px">План</h2>
+   <div class="f"><label for="qty">Продаж в месяц</label><div class="in"><input id="qty" type="number" inputmode="numeric" min="0" step="1"><span class="u">шт</span></div></div>
+   <div class="f"><label for="tgt">Желаемая маржа</label><div class="in"><input id="tgt" type="number" inputmode="decimal" min="0" max="90" step="any"><span class="u">%</span></div></div>
+  </div>
+  <div>
+   <div class="panel hero">
+    <div class="cap">Прибыль с одной штуки</div>
+    <div class="big" id="profit">0</div>
+    <div class="bar" id="bar" role="img" aria-label="Куда уходит цена"></div>
+    <ul class="leg" id="leg"></ul>
+    <div class="kpis">
+     <div class="k"><b id="margin">0</b><span>Маржа</span></div>
+     <div class="k"><b id="roi">0</b><span>Отдача на вложенное (ROI)</span></div>
+     <div class="k"><b id="be">0</b><span>Цена безубыточности</span></div>
+     <div class="k"><b id="mon">0</b><span>Прибыль в месяц</span></div>
+     <div class="k"><b id="rev">0</b><span>Выручка в месяц</span></div>
+     <div class="k"><b id="tp">0</b><span>Цена для желаемой маржи</span></div>
+    </div>
+    <div class="msg" id="msg"></div>
+   </div>
+  </div>
+ </div>
+</div>
+<script>
+var D={cur:"₽",price:1500,cost:400,pack:30,log:120,com:20,ads:10,ret:5,tax:6,qty:100,tgt:25};
+var ids=Object.keys(D),S=Object.assign({},D);
+try{var raw=localStorage.getItem("mc1");if(raw){var o=JSON.parse(raw);ids.forEach(function(k){if(o&&o[k]!==undefined)S[k]=o[k]})}}catch(e){}
+function $(i){return document.getElementById(i)}
+function n(v){v=parseFloat(v);return isFinite(v)?v:0}
+function fmt(v,d){return new Intl.NumberFormat("ru-RU",{maximumFractionDigits:d||0}).format(v)}
+function money(v){return fmt(v,Math.abs(v)<100?2:0)+" "+S.cur}
+function pct(v){return fmt(v,1)+" %"}
+function fill(){ids.forEach(function(k){$(k).value=S[k]});each(".cu",function(e){e.textContent=S.cur})}
+function each(s,f){Array.prototype.forEach.call(document.querySelectorAll(s),f)}
+function calc(){
+ var P=n(S.price),fixed=n(S.cost)+n(S.pack)+n(S.log),p=(n(S.com)+n(S.ads)+n(S.ret)+n(S.tax))/100,t=n(S.tgt)/100,q=n(S.qty);
+ var com=P*n(S.com)/100,ads=P*n(S.ads)/100,ret=P*n(S.ret)/100,tax=P*n(S.tax)/100;
+ var profit=P-fixed-com-ads-ret-tax,margin=P>0?profit/P:0,inv=n(S.cost)+n(S.pack);
+ var roi=inv>0?profit/inv:0,be=p<1?fixed/(1-p):Infinity,tp=(1-p-t)>0?fixed/(1-p-t):Infinity;
+ var el=$("profit");el.textContent=money(profit);el.className="big "+(profit>=0?"pos":"neg");
+ $("margin").textContent=pct(margin*100);$("roi").textContent=pct(roi*100);
+ $("be").textContent=isFinite(be)?money(be):"—";$("tp").textContent=isFinite(tp)?money(tp):"—";
+ $("mon").textContent=money(profit*q);$("rev").textContent=money(P*q);
+ var parts=[["Себестоимость",n(S.cost),"--c1"],["Упаковка и прочее",n(S.pack),"--c6"],["Логистика",n(S.log),"--c2"],["Комиссия",com,"--c3"],["Реклама",ads,"--c4"],["Возвраты",ret,"--c5"],["Налог",tax,"--c6"]];
+ parts[1][2]="--c6";parts[6][2]="--line";
+ var pos=Math.max(profit,0),total=Math.max(P,parts.reduce(function(a,x){return a+x[1]},0)+pos,1),bar="",leg="";
+ parts.forEach(function(x){bar+='<div style="width:'+(x[1]/total*100)+'%;background:var('+x[2]+')" title="'+x[0]+'"></div>';
+  leg+='<li><span><i style="background:var('+x[2]+')"></i>'+x[0]+'</span><span>'+money(x[1])+'</span></li>'});
+ bar+='<div style="width:'+(pos/total*100)+'%;background:var(--good)" title="Прибыль"></div>';
+ leg+='<li><span><i style="background:var(--good)"></i>Прибыль</span><span>'+money(profit)+'</span></li>';
+ $("bar").innerHTML=bar;$("leg").innerHTML=leg;
+ var m;
+ if(P<=0)m="Введите цену продажи.";
+ else if(profit<0)m="Сейчас вы теряете "+money(-profit)+" на каждой штуке. Поднимите цену минимум до "+(isFinite(be)?money(be):"—")+" или сократите расходы.";
+ else if(margin<t)m="Прибыль есть, но маржа ниже желаемой "+pct(t*100)+". Чтобы её достичь, цена должна быть около "+(isFinite(tp)?money(tp):"— (расходы в процентах слишком велики)")+".";
+ else m="Маржа выше желаемой "+pct(t*100)+". Запас по цене до безубыточности: "+(isFinite(be)?money(P-be):"—")+" на штуку.";
+ $("msg").textContent=m;
+}
+ids.forEach(function(k){$(k).addEventListener("input",function(){S[k]=this.value;each(".cu",function(e){e.textContent=S.cur});calc();try{localStorage.setItem("mc1",JSON.stringify(S))}catch(e){}})});
+$("reset").addEventListener("click",function(){S=Object.assign({},D);fill();calc();try{localStorage.removeItem("mc1")}catch(e){}});
+fill();calc();
+</script>
+</body>
+</html>
